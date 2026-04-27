@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HospSystem — Gestão de Internações</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F4F3EF;
+  --bg2: #ECEAE4;
+  --bg3: #E2DFD8;
+  --border: #D0CCC3;
+  --border2: #C0BBB0;
+  --text: #1A1916;
+  --text2: #6B6760;
+  --text3: #9E9A93;
+  --blue: #1B4FD8;
+  --blue-bg: #EBF0FD;
+  --blue-border: #C0CFFB;
+  --green: #166534;
+  --green-bg: #EDFAEF;
+  --green-border: #BBF0C7;
+  --amber: #92400E;
+  --amber-bg: #FEF6E4;
+  --amber-border: #FBDFA0;
+  --red: #991B1B;
+  --red-bg: #FEF2F2;
+  --red-border: #FECACA;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  height: 52px;
+  background: var(--text);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+.topbar-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  color: #fff;
+  letter-spacing: .02em;
+}
+.topbar-logo span { color: #6B8EF5; }
+.topbar-sep { width: 1px; height: 20px; background: #333; }
+.topbar-nav { display: flex; gap: 2px; flex: 1; }
+.tnav {
+  padding: 5px 12px;
+  font-size: 12px;
+  color: #999;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all .15s;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+.tnav:hover { color: #fff; background: #2a2a2a; }
+.tnav.on { color: #fff; background: #2a2a2a; }
+.topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.db-pill {
+  font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.db-pill.ok { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+.db-pill.err { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+.db-pill.wait { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
+
+/* ── LAYOUT ── */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 0;
+  overflow: hidden;
+  transition: width .2s;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar.open { width: 240px; }
+.sidebar-inner { width: 240px; padding: 1rem 0; height: 100%; overflow-y: auto; }
+.sgroup-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text3);
+  padding: .75rem 1.25rem .3rem;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.sitem {
+  padding: 7px 1.25rem;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 2px solid transparent;
+}
+.sitem:hover { background: var(--bg3); color: var(--text); }
+.sitem.on { background: var(--bg3); color: var(--blue); border-left-color: var(--blue); font-weight: 500; }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.main-header {
+  padding: .75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.main-title { font-size: 15px; font-weight: 600; flex: 1; }
+.content { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: #fff;
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 500;
+  transition: all .12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn:hover { border-color: var(--border2); background: var(--bg2); }
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-primary:hover { opacity: .88; background: var(--blue); }
+.btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-danger:hover { opacity: .88; }
+.btn-sm { padding: 3px 9px; font-size: 11px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── STATS ── */
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
+.stat {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow);
+}
+.stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; font-family: 'IBM Plex Mono', monospace; margin-bottom: 6px; }
+.stat-value { font-size: 28px; font-weight: 600; line-height: 1; }
+.stat-value.blue { color: var(--blue); }
+.stat-value.green { color: var(--green); }
+.stat-value.amber { color: var(--amber); }
+.stat-value.red { color: var(--red); }
+
+/* ── TABLE ── */
+.table-wrap { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; }
+th {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text3);
+  padding: 8px 14px;
+  text-align: left;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+}
+td { font-size: 13px; padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--bg2); cursor: pointer; }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+  border: 1px solid;
+}
+.badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.b-internado { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-border); }
+.b-observacao { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
+.b-critico { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+.b-alta { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+
+/* ── CID TAG ── */
+.cid-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 4px;
+  color: var(--text2);
+}
+
+/* ── SEARCH BAR ── */
+.searchbar { display: flex; gap: 8px; margin-bottom: 1rem; }
+.searchbar input { flex: 1; }
+
+/* ── FORM ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.fg.full { grid-column: 1/-1; }
+.fg label { font-size: 11px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; font-family: 'IBM Plex Mono', monospace; }
+input, select, textarea {
+  font-size: 13px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  background: #fff;
+  color: var(--text);
+  width: 100%;
+  font-family: inherit;
+  transition: border-color .12s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); }
+textarea { resize: vertical; min-height: 72px; }
+input[readonly] { background: var(--bg2); color: var(--text3); }
+
+/* ── LEITOS ── */
+.section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-family: 'IBM Plex Mono', monospace; margin-bottom: .6rem; }
+.leito-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 8px; margin-bottom: 1.5rem; }
+.leito {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .75rem;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.leito.livre { border-color: var(--green-border); background: var(--green-bg); }
+.leito.ocupado { border-color: var(--blue-border); background: var(--blue-bg); cursor: pointer; }
+.leito.critico { border-color: var(--red-border); background: var(--red-bg); cursor: pointer; }
+.leito-num { font-size: 18px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+.leito.livre .leito-num { color: var(--green); }
+.leito.ocupado .leito-num { color: var(--blue); }
+.leito.critico .leito-num { color: var(--red); }
+.leito-setor { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; margin-top: 1px; }
+.leito-pac { font-size: 11px; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+/* ── CARD ── */
+.card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+.card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; font-family: 'IBM Plex Mono', monospace; color: var(--text2); margin-bottom: .75rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+
+/* ── EVOLUÇÃO ── */
+.evol-item { padding: .75rem 0; border-bottom: 1px solid var(--border); }
+.evol-item:last-child { border-bottom: none; }
+.evol-meta { font-size: 11px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; margin-bottom: 4px; }
+.evol-text { font-size: 13px; line-height: 1.65; color: var(--text); }
+.evol-meds { font-size: 11px; color: var(--amber); margin-top: 4px; font-style: italic; }
+
+/* ── MED ITEM ── */
+.med-item { display: flex; align-items: center; gap: 8px; padding: .4rem 0; border-bottom: 1px solid var(--border); }
+.med-item:last-child { border-bottom: none; }
+.med-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); flex-shrink: 0; }
+.med-name { font-size: 12px; flex: 1; }
+
+/* ── MODAL ── */
+.overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(2px); }
+.overlay.open { display: flex; }
+.modal { background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 1.5rem; width: 560px; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-md); }
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 1.25rem; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--text); color: #fff; font-size: 13px; padding: 10px 16px; border-radius: var(--radius-lg); display: none; z-index: 300; box-shadow: var(--shadow-md); font-family: 'IBM Plex Mono', monospace; }
+.toast.err { background: var(--red); }
+.toast.ok { background: var(--green); }
+
+/* ── PANEL ── */
+.panel { display: none; }
+.panel.on { display: block; }
+
+/* ── PACIENTE HEADER ── */
+.pac-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--blue-bg); border: 1px solid var(--blue-border);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 14px; color: var(--blue);
+  font-family: 'IBM Plex Mono', monospace;
+  flex-shrink: 0;
+}
+.info-row { display: flex; gap: 0; margin-bottom: .875rem; }
+.info-row td:first-child { color: var(--text3); font-size: 11px; font-family: 'IBM Plex Mono', monospace; width: 130px; padding: 4px 0; text-transform: uppercase; letter-spacing: .03em; }
+.info-row td:last-child { font-size: 13px; padding: 4px 0; }
+
+/* ── LOADING ── */
+.loading-row td { color: var(--text3); font-style: italic; text-align: center; padding: 2rem; }
+
+@media (max-width: 768px) {
+  .stats { grid-template-columns: repeat(2,1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .fg.full { grid-column: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">Hosp<span>System</span></div>
+  <div class="topbar-sep"></div>
+  <nav class="topbar-nav">
+    <button class="tnav on" onclick="go('dash',this)">Painel</button>
+    <button class="tnav" onclick="go('pac',this)">Pacientes</button>
+    <button class="tnav" onclick="go('leitos',this)">Leitos</button>
+    <button class="tnav" onclick="go('evol',this)">Evoluções</button>
+  </nav>
+  <div class="topbar-right">
+    <span class="db-pill wait" id="dbpill">conectando...</span>
+    <button class="btn btn-primary" onclick="openPacModal()">+ Novo paciente</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <div class="main">
+    <div class="main-header">
+      <span class="main-title" id="main-title">Painel geral</span>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="panel on" id="p-dash">
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Internados</div><div class="stat-value blue" id="s-int">—</div></div>
+          <div class="stat"><div class="stat-label">Leitos livres</div><div class="stat-value green" id="s-liv">—</div></div>
+          <div class="stat"><div class="stat-label">Observação</div><div class="stat-value amber" id="s-obs">—</div></div>
+          <div class="stat"><div class="stat-label">Críticos</div><div class="stat-value red" id="s-crit">—</div></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Paciente</th><th>Leito</th><th>Setor</th><th>Diagnóstico</th><th>Status</th><th>Internação</th></tr></thead>
+            <tbody id="tb-dash"><tr class="loading-row"><td colspan="6">Carregando dados...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PACIENTES -->
+      <div class="panel" id="p-pac">
+        <div class="searchbar">
+          <input id="q-pac" placeholder="Buscar por nome ou prontuário..." oninput="renderPac()">
+          <select id="f-status" onchange="renderPac()" style="width:160px">
+            <option value="">Todos os status</option>
+            <option>internado</option><option>observação</option><option>crítico</option><option>alta</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Prontuário</th><th>Nome</th><th>Idade</th><th>Leito</th><th>CID</th><th>Status</th><th></th></tr></thead>
+            <tbody id="tb-pac"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LEITOS -->
+      <div class="panel" id="p-leitos">
+        <div class="section-title">UTI / Centro de Terapia Intensiva</div>
+        <div class="leito-grid" id="lg-uti"></div>
+        <div class="section-title">Enfermaria Geral</div>
+        <div class="leito-grid" id="lg-enf"></div>
+        <div class="section-title">Observação</div>
+        <div class="leito-grid" id="lg-obs"></div>
+      </div>
+
+      <!-- EVOLUÇÕES -->
+      <div class="panel" id="p-evol">
+        <div class="searchbar">
+          <select id="sel-pac" onchange="renderEvol()" style="width:280px">
+            <option value="">Selecione um paciente...</option>
+          </select>
+          <button class="btn btn-primary" onclick="openEvolModal()">+ Registrar evolução</button>
+        </div>
+        <div id="evol-content"><p style="color:var(--text3);font-size:13px">Selecione um paciente para ver evoluções.</p></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOVO PACIENTE -->
+<div class="overlay" id="m-pac">
+  <div class="modal">
+    <div class="modal-title">Cadastrar paciente</div>
+    <div class="form-grid">
+      <div class="fg"><label>Nome completo</label><input id="f-nome" placeholder="Nome completo"></div>
+      <div class="fg"><label>Data de nascimento</label><input id="f-nasc" type="date"></div>
+      <div class="fg"><label>CPF</label><input id="f-cpf" placeholder="000.000.000-00"></div>
+      <div class="fg"><label>Prontuário</label><input id="f-pron" readonly></div>
+      <div class="fg"><label>Leito</label><select id="f-leito"></select></div>
+      <div class="fg"><label>Status</label>
+        <select id="f-st"><option value="internado">Internado</option><option value="observação">Observação</option><option value="crítico">Crítico</option></select>
+      </div>
+      <div class="fg full"><label>Diagnóstico principal</label><input id="f-diag" placeholder="Ex: Pneumonia bacteriana"></div>
+      <div class="fg"><label>CID-10</label><input id="f-cid" placeholder="Ex: J18.9"></div>
+      <div class="fg"><label>Médico responsável</label><input id="f-med" placeholder="Dr. / Dra."></div>
+      <div class="fg full"><label>Medicamentos prescritos</label><textarea id="f-meds" placeholder="Ex: Amoxicilina 500mg 8/8h; Dipirona 1g se dor"></textarea></div>
+      <div class="fg full"><label>Observações</label><textarea id="f-obs"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeM('m-pac')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save" onclick="savePac()">Salvar paciente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EVOLUÇÃO -->
+<div class="overlay" id="m-evol">
+  <div class="modal">
+    <div class="modal-title">Registrar evolução clínica</div>
+    <div class="form-grid">
+      <div class="fg"><label>Profissional</label><input id="e-prof" placeholder="Nome do profissional"></div>
+      <div class="fg"><label>Categoria</label>
+        <select id="e-cat"><option>Médico</option><option>Enfermagem</option><option>Fisioterapia</option><option>Nutrição</option><option>Psicologia</option></select>
+      </div>
+      <div class="fg full"><label>Evolução clínica</label><textarea id="e-texto" style="min-height:100px" placeholder="Descreva a evolução do paciente..."></textarea></div>
+      <div class="fg full"><label>Atualizar prescrição (opcional)</label><textarea id="e-meds" placeholder="Ex: Suspender Amoxicilina; iniciar Azitromicina 500mg 1x/dia"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeM('m-evol')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-evol" onclick="saveEvol()">Salvar evolução</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: VER PACIENTE -->
+<div class="overlay" id="m-ver">
+  <div class="modal" id="m-ver-body"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIGURAÇÃO SUPABASE
+// ══════════════════════════════════════════
+const SB_URL = 'https://yymqvjjfrctryavioxnj.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5bXF2ampmcmN0cnlhdmlveG5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMzEwMDksImV4cCI6MjA5MjcwNzAwOX0.A6isvm-vgkVr2pV5yjzWXSGFzcEAh_7HJvianqQV3Ag'
+
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Prefer': 'return=representation'
+}
+
+// ══════════════════════════════════════════
+//  LEITOS
+// ══════════════════════════════════════════
+const LEITOS = [
+  {id:'U01',s:'UTI'},{id:'U02',s:'UTI'},{id:'U03',s:'UTI'},
+  {id:'E01',s:'Enfermaria'},{id:'E02',s:'Enfermaria'},{id:'E03',s:'Enfermaria'},{id:'E04',s:'Enfermaria'},
+  {id:'O01',s:'Observação'},{id:'O02',s:'Observação'},{id:'O03',s:'Observação'}
+]
+
+// ══════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════
+let PACS = [], pc = 1
+
+// ══════════════════════════════════════════
+//  API
+// ══════════════════════════════════════════
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: HEADERS }
+  if (body) opts.body = JSON.stringify(body)
+  const r = await fetch(SB_URL + '/rest/v1/' + path, opts)
+  if (!r.ok) { const e = await r.text(); throw new Error(e) }
+  if (method === 'DELETE' || r.status === 204) return null
+  return r.json()
+}
+
+// ══════════════════════════════════════════
+//  UTILITÁRIOS
+// ══════════════════════════════════════════
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.className = 'toast ' + type
+  t.style.display = 'block'
+  clearTimeout(t._t)
+  t._t = setTimeout(() => t.style.display = 'none', 3000)
+}
+
+function setDb(state) {
+  const el = document.getElementById('dbpill')
+  const map = { ok: ['conectado ●', 'ok'], err: ['erro ✕', 'err'], wait: ['conectando...', 'wait'] }
+  const [txt, cls] = map[state] || map.wait
+  el.textContent = txt; el.className = 'db-pill ' + cls
+}
+
+function idade(n) {
+  if (!n) return '—'
+  const d = new Date(n), a = new Date()
+  let y = a.getFullYear() - d.getFullYear()
+  if (a < new Date(a.getFullYear(), d.getMonth(), d.getDate())) y--
+  return y + 'a'
+}
+
+function badge(s) {
+  const map = { internado: 'b-internado', observação: 'b-observacao', crítico: 'b-critico', alta: 'b-alta' }
+  return `<span class="badge ${map[s] || ''}">${s}</span>`
+}
+
+function ocp() { return PACS.filter(p => p.status !== 'alta').map(p => p.leito) }
+
+function genId() { return 'P' + String(pc++).padStart(3, '0') }
+
+function now() { return new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) }
+
+// ══════════════════════════════════════════
+//  CARREGAR DADOS
+// ══════════════════════════════════════════
+async function loadPacs() {
+  setDb('wait')
+  try {
+    PACS = await api('pacientes?order=data.desc')
+    if (PACS.length) {
+      const nums = PACS.map(p => parseInt(p.id.replace('P', ''))).filter(n => !isNaN(n))
+      if (nums.length) pc = Math.max(...nums) + 1
+    }
+    setDb('ok')
+    return true
+  } catch (e) {
+    setDb('err')
+    document.querySelector('#tb-dash .loading-row td').textContent = 'Erro ao conectar com Supabase: ' + e.message
+    toast('Erro de conexão: ' + e.message, 'err')
+    return false
+  }
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function renderDash() {
+  document.getElementById('s-int').textContent = PACS.filter(p => p.status === 'internado').length
+  document.getElementById('s-liv').textContent = LEITOS.length - ocp().length
+  document.getElementById('s-obs').textContent = PACS.filter(p => p.status === 'observação').length
+  document.getElementById('s-crit').textContent = PACS.filter(p => p.status === 'crítico').length
+  const tb = document.getElementById('tb-dash'); tb.innerHTML = ''
+  const ativos = PACS.filter(p => p.status !== 'alta')
+  if (!ativos.length) {
+    tb.innerHTML = '<tr class="loading-row"><td colspan="6">Nenhum paciente ativo.</td></tr>'
+    return
+  }
+  ativos.forEach(p => {
+    const l = LEITOS.find(x => x.id === p.leito)
+    tb.innerHTML += `<tr onclick="verPac('${p.id}')">
+      <td><strong>${p.nome}</strong></td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:12px">${p.leito || '—'}</span></td>
+      <td>${l ? l.s : '—'}</td>
+      <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.diag || '—'}</td>
+      <td>${badge(p.status)}</td>
+      <td style="color:var(--text3);font-size:12px">${p.data || '—'}</td>
+    </tr>`
+  })
+}
+
+function renderPac() {
+  const q = (document.getElementById('q-pac').value || '').toLowerCase()
+  const fs = document.getElementById('f-status').value
+  const tb = document.getElementById('tb-pac'); tb.innerHTML = ''
+  const list = PACS.filter(p =>
+    (p.nome.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)) && (!fs || p.status === fs)
+  )
+  if (!list.length) {
+    tb.innerHTML = '<tr class="loading-row"><td colspan="7">Nenhum paciente encontrado.</td></tr>'
+    return
+  }
+  list.forEach(p => {
+    tb.innerHTML += `<tr>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3)">${p.id}</span></td>
+      <td><a href="#" onclick="verPac('${p.id}');return false" style="color:var(--blue);text-decoration:none;font-weight:500">${p.nome}</a></td>
+      <td style="color:var(--text3)">${idade(p.nasc)}</td>
+      <td><span style="font-family:'IBM Plex Mono',monospace;font-size:12px">${p.leito || '—'}</span></td>
+      <td><span class="cid-tag">${p.cid || '—'}</span></td>
+      <td>${badge(p.status)}</td>
+      <td><button class="btn btn-sm" onclick="verPac('${p.id}')">Ver →</button></td>
+    </tr>`
+  })
+}
+
+function renderLeitos() {
+  const oc = {}
+  PACS.filter(p => p.status !== 'alta').forEach(p => { oc[p.leito] = p })
+  ;['UTI', 'Enfermaria', 'Observação'].forEach(s => {
+    const k = { 'UTI': 'uti', 'Enfermaria': 'enf', 'Observação': 'obs' }[s]
+    const el = document.getElementById('lg-' + k); el.innerHTML = ''
+    LEITOS.filter(l => l.s === s).forEach(l => {
+      const p = oc[l.id]
+      let cls = 'livre', nm = 'Livre'
+      if (p) { cls = p.status === 'crítico' ? 'critico' : 'ocupado'; nm = p.nome }
+      el.innerHTML += `<div class="leito ${cls}" ${p ? `onclick="verPac('${p.id}')"` : ''}>
+        <div class="leito-num">${l.id}</div>
+        <div class="leito-setor">${l.s}</div>
+        <div class="leito-pac">${nm}</div>
+      </div>`
+    })
+  })
+}
+
+function renderSelectPac() {
+  const s = document.getElementById('sel-pac'); const cur = s.value
+  s.innerHTML = '<option value="">Selecione um paciente...</option>'
+  PACS.filter(p => p.status !== 'alta').forEach(p => {
+    s.innerHTML += `<option value="${p.id}">${p.nome}</option>`
+  })
+  if (cur) s.value = cur
+}
+
+async function renderEvol() {
+  const pid = document.getElementById('sel-pac').value
+  const el = document.getElementById('evol-content'); el.innerHTML = ''
+  if (!pid) { el.innerHTML = '<p style="color:var(--text3);font-size:13px">Selecione um paciente.</p>'; return }
+  el.innerHTML = '<p style="color:var(--text3);font-size:13px">Carregando...</p>'
+  const p = PACS.find(x => x.id === pid)
+  let evs = []
+  try { evs = await api(`evolucoes?paciente_id=eq.${pid}&order=criado_em.desc`) } catch (e) { toast('Erro ao carregar evoluções', 'err') }
+  const ms = (p.meds || '').split(';').map(m => m.trim()).filter(Boolean)
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">Prescrição ativa — ${p.nome}</div>
+      ${ms.map(m => `<div class="med-item"><div class="med-dot"></div><div class="med-name">${m}</div></div>`).join('') || '<p style="font-size:12px;color:var(--text3)">Sem prescrição ativa.</p>'}
+    </div>
+    <div class="card">
+      <div class="card-title">Histórico de evoluções</div>
+      ${evs.length ? evs.map(e => {
+        const dt = new Date(e.criado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+        return `<div class="evol-item">
+          <div class="evol-meta">${dt} · ${e.profissional || ''} · ${e.categoria || ''}</div>
+          <div class="evol-text">${e.texto || ''}</div>
+          ${e.meds ? `<div class="evol-meds">↳ Prescrição atualizada: ${e.meds}</div>` : ''}
+        </div>`
+      }).join('') : '<p style="font-size:12px;color:var(--text3)">Nenhuma evolução registrada.</p>'}
+    </div>`
+}
+
+// ══════════════════════════════════════════
+//  MODAIS
+// ══════════════════════════════════════════
+function openPacModal() {
+  const livres = LEITOS.filter(l => !ocp().includes(l.id))
+  document.getElementById('f-leito').innerHTML = livres.map(l => `<option value="${l.id}">${l.id} — ${l.s}</option>`).join('')
+  document.getElementById('f-pron').value = 'P' + String(pc).padStart(3, '0')
+  document.getElementById('m-pac').classList.add('open')
+}
+
+function closeM(id) { document.getElementById(id).classList.remove('open') }
+
+async function savePac() {
+  const nome = document.getElementById('f-nome').value.trim()
+  if (!nome) { toast('Informe o nome do paciente.', 'err'); return }
+  const btn = document.getElementById('btn-save'); btn.disabled = true; btn.textContent = 'Salvando...'
+  const id = genId()
+  const p = {
+    id, nome,
+    nasc: document.getElementById('f-nasc').value || null,
+    cpf: document.getElementById('f-cpf').value,
+    leito: document.getElementById('f-leito').value,
+    status: document.getElementById('f-st').value,
+    diag: document.getElementById('f-diag').value,
+    cid: document.getElementById('f-cid').value,
+    medico: document.getElementById('f-med').value,
+    meds: document.getElementById('f-meds').value,
+    obs: document.getElementById('f-obs').value,
+    data: new Date().toISOString().split('T')[0]
+  }
+  try {
+    await api('pacientes', 'POST', p)
+    PACS.unshift(p); closeM('m-pac'); renderAll(); toast('Paciente cadastrado!', 'ok')
+    ;['f-nome','f-nasc','f-cpf','f-diag','f-cid','f-med','f-meds','f-obs'].forEach(i => document.getElementById(i).value = '')
+  } catch (e) { toast('Erro: ' + e.message, 'err'); pc-- }
+  btn.disabled = false; btn.textContent = 'Salvar paciente'
+}
+
+function openEvolModal() {
+  if (!document.getElementById('sel-pac').value) { toast('Selecione um paciente primeiro.', 'err'); return }
+  document.getElementById('m-evol').classList.add('open')
+}
+
+async function saveEvol() {
+  const pid = document.getElementById('sel-pac').value
+  const btn = document.getElementById('btn-evol'); btn.disabled = true; btn.textContent = 'Salvando...'
+  const meds = document.getElementById('e-meds').value.trim()
+  const evol = {
+    paciente_id: pid,
+    profissional: document.getElementById('e-prof').value,
+    categoria: document.getElementById('e-cat').value,
+    texto: document.getElementById('e-texto').value,
+    meds
+  }
+  try {
+    await api('evolucoes', 'POST', evol)
+    if (meds) {
+      await api(`pacientes?id=eq.${pid}`, 'PATCH', { meds })
+      const p = PACS.find(x => x.id === pid); if (p) p.meds = meds
+    }
+    closeM('m-evol'); renderEvol(); toast('Evolução registrada!', 'ok')
+    ;['e-prof','e-texto','e-meds'].forEach(i => document.getElementById(i).value = '')
+  } catch (e) { toast('Erro: ' + e.message, 'err') }
+  btn.disabled = false; btn.textContent = 'Salvar evolução'
+}
+
+async function darAlta(pid) {
+  if (!confirm('Confirmar alta do paciente?')) return
+  try {
+    await api(`pacientes?id=eq.${pid}`, 'PATCH', { status: 'alta', leito: null })
+    const p = PACS.find(x => x.id === pid); if (p) { p.status = 'alta'; p.leito = null }
+    closeM('m-ver'); renderAll(); toast('Alta registrada!', 'ok')
+  } catch (e) { toast('Erro ao registrar alta', 'err') }
+}
+
+async function verPac(pid) {
+  const p = PACS.find(x => x.id === pid); if (!p) return
+  const l = LEITOS.find(x => x.id === p.leito)
+  let evs = []
+  try { evs = await api(`evolucoes?paciente_id=eq.${pid}&order=criado_em.desc&limit=1`) } catch (e) {}
+  const ms = (p.meds || '').split(';').filter(Boolean)
+  document.getElementById('m-ver-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.25rem">
+      <div class="pac-avatar">${p.nome.split(' ').map(n=>n[0]).slice(0,2).join('')}</div>
+      <div>
+        <div style="font-size:16px;font-weight:600">${p.nome}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace">${p.id} · ${idade(p.nasc)} · ${p.cpf || '—'}</div>
+        <div style="margin-top:6px">${badge(p.status)}</div>
+      </div>
+    </div>
+    <table style="margin-bottom:1rem;width:100%">
+      <tr class="info-row"><td>Leito</td><td><span style="font-family:'IBM Plex Mono',monospace">${p.leito || '—'}</span>${l ? ' — ' + l.s : ''}</td></tr>
+      <tr class="info-row"><td>Diagnóstico</td><td>${p.diag || '—'} ${p.cid ? `<span class="cid-tag">${p.cid}</span>` : ''}</td></tr>
+      <tr class="info-row"><td>Médico</td><td>${p.medico || '—'}</td></tr>
+      <tr class="info-row"><td>Internação</td><td>${p.data || '—'}</td></tr>
+    </table>
+    ${ms.length ? `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:6px">Prescrição ativa</div>
+    ${ms.map(m => `<div class="med-item"><div class="med-dot"></div><div class="med-name">${m.trim()}</div></div>`).join('')}` : ''}
+    ${evs.length ? `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin:1rem 0 6px">Última evolução</div>
+    <div class="evol-meta">${new Date(evs[0].criado_em).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})} · ${evs[0].profissional || ''} · ${evs[0].categoria || ''}</div>
+    <div class="evol-text">${evs[0].texto || ''}</div>` : ''}
+    ${p.obs ? `<div style="font-size:12px;color:var(--text3);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">${p.obs}</div>` : ''}
+    <div class="modal-actions">
+      ${p.status !== 'alta' ? `<button class="btn btn-danger" onclick="darAlta('${p.id}')">Dar alta</button>` : ''}
+      <button class="btn" onclick="closeM('m-ver')">Fechar</button>
+      <button class="btn btn-primary" onclick="closeM('m-ver');go('evol',document.querySelectorAll('.tnav')[3]);document.getElementById('sel-pac').value='${pid}';renderEvol()">Ver evoluções →</button>
+    </div>`
+  document.getElementById('m-ver').classList.add('open')
+}
+
+// ══════════════════════════════════════════
+//  NAVEGAÇÃO
+// ══════════════════════════════════════════
+function go(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'))
+  document.querySelectorAll('.tnav').forEach(n => n.classList.remove('on'))
+  document.getElementById('p-' + id).classList.add('on')
+  el.classList.add('on')
+  const titles = { dash: 'Painel geral', pac: 'Pacientes internados', leitos: 'Mapa de leitos', evol: 'Evoluções clínicas' }
+  document.getElementById('main-title').textContent = titles[id]
+  if (id === 'pac') renderPac()
+  if (id === 'leitos') renderLeitos()
+  if (id === 'evol') { renderSelectPac(); renderEvol() }
+}
+
+function renderAll() { renderDash(); renderPac(); renderLeitos(); renderSelectPac() }
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+async function init() {
+  const ok = await loadPacs()
+  if (ok) renderAll()
+}
+init()
+</script>
+</body>
+</html>
